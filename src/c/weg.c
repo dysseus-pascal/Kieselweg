@@ -87,6 +87,8 @@ static int32_t prv_grosse_zahl(void) {
   return -1;
 }
 
+bool weg_hat_zahl(void) { return prv_grosse_zahl() >= 0; }
+
 const char *weg_bezug(void) {
   if (s_weg.entfernung_m >= 0) return "";
   if (s_weg.fortschritt_max_m > 0) return "bis zum Ziel";

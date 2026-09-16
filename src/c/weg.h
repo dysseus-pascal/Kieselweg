@@ -44,5 +44,9 @@ const char *weg_bezug(void);
 // Der Balken: 0..100, oder -1 wenn keiner zu zeichnen ist.
 int weg_balken_prozent(void);
 
+// Gibt es ueberhaupt eine Zahl zu zeigen? Nach dem Ende einer Navigation
+// nicht mehr - dann steht nur die Anweisung da.
+bool weg_hat_zahl(void);
+
 // Wie alt ist der Stand in Sekunden? -1, wenn noch nichts da ist.
 int weg_alter_s(void);

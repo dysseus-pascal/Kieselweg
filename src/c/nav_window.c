@@ -125,6 +125,19 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
 
   int16_t y = PBL_IF_ROUND_ELSE(34, 10);
 
+  // --- Nichts mehr zu zeigen ---
+  // Nach dem Ende einer Navigation schickt das Telefon eine Null fuer die
+  // Strecke. Dann steht die Anweisung allein da, gross und mittig, statt
+  // unter zwei Strichen, wo eine Zahl sein sollte.
+  if (!weg_hat_zahl()) {
+    graphics_draw_text(ctx, w->anweisung[0] ? w->anweisung : "Keine Navigation",
+                       fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_28_BOLD
+                                                      : FONT_KEY_GOTHIC_24_BOLD),
+                       GRect(RAND, b.size.h / 3, breite, ANW_H * 3),
+                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    return;
+  }
+
   prv_zeichne_entfernung(ctx, b, y);
   // Der Bezug unter der Zahl braucht eigenen Platz - ohne diese Zeile laege
   // der Balken darauf.
