@@ -64,6 +64,17 @@ Zwei Fallen im Werkzeug, in beide bin ich hineingetreten:
   genau so fehlte hier eine Stunde lang die Anweisung, während Entfernung und
   Strasse ankamen. Alle Zeichenketten gehören in **eine** Gruppe.
 
+## Aufs Handgelenk
+
+Das fertige Paket liegt als [kieselweg.pbw](kieselweg.pbw) im Repo — alle drei
+Uhren in einer Datei (emery, flint, gabbro).
+
+```bash
+pebble install --phone kieselweg.pbw
+```
+
+Oder die Datei aufs Telefon schieben und in der Pebble-App öffnen.
+
 ## Bauen
 
 ```bash
