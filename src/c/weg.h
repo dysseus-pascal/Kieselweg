@@ -4,14 +4,20 @@
 // Was gerade auf dem Schirm steht. Eine Nachricht vom Telefon muss nicht alle
 // Felder tragen - fehlt eines, bleibt das alte stehen.
 #define KW_ANWEISUNG_LEN 64
-#define KW_STRASSE_LEN   48
+#define KW_ZUSATZ_LEN   48
 
 typedef struct {
   char anweisung[KW_ANWEISUNG_LEN];
-  char strasse[KW_STRASSE_LEN];
-  int32_t entfernung_m;   // -1 = unbekannt
-  time_t ankunft;         // 0 = unbekannt
-  time_t empfangen;       // 0 = noch nichts empfangen
+  char zusatz[KW_ZUSATZ_LEN];
+  int32_t entfernung_m;      // -1 = unbekannt
+  time_t ankunft;            // 0 = unbekannt
+  // Fortschritt auf der GESAMTSTRECKE, in Metern. Google Maps schickt genau
+  // das und keine Entfernung zur naechsten Abzweigung - sein "Live Update"
+  // traegt android.progress von android.progressMax. Beides zusammen ergibt,
+  // was noch vor einem liegt; die Uhr rechnet es aus, nicht der Zettel.
+  int32_t fortschritt_m;     // -1 = unbekannt
+  int32_t fortschritt_max_m; // -1 = unbekannt
+  time_t empfangen;          // 0 = noch nichts empfangen
 } Weg;
 
 // Der eine Stand, den alle lesen.
@@ -25,9 +31,18 @@ void weg_lade(void);
 // Summen am Handgelenk.
 bool weg_uebernimm(DictionaryIterator *iter);
 
-// Entfernung als Text: unter 1000 m in Metern, darueber in Kilometern mit
-// einer Nachkommastelle. Schreibt in puf und gibt puf zurueck.
+// Die Zahl, die gross auf dem Schirm steht, als Text: entweder die Entfernung
+// zur naechsten Abzweigung oder - wenn die Quelle die nicht kennt - der Rest
+// der Gesamtstrecke. Unter 1000 m in Metern, darueber in Kilometern mit einer
+// Nachkommastelle. Schreibt in puf und gibt puf zurueck.
 char *weg_entfernung_text(char *puf, size_t len);
+
+// Was die grosse Zahl bedeutet - die Uhr schreibt es klein daneben, damit
+// niemand den Rest der Strecke fuer den Abstand zur Abzweigung haelt.
+const char *weg_bezug(void);
+
+// Der Balken: 0..100, oder -1 wenn keiner zu zeichnen ist.
+int weg_balken_prozent(void);
 
 // Wie alt ist der Stand in Sekunden? -1, wenn noch nichts da ist.
 int weg_alter_s(void);

@@ -80,6 +80,20 @@ static void prv_zeichne_entfernung(GContext *ctx, GRect b, int16_t y) {
                              se.w + 4, se.h + 4),
                        GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
   }
+
+  // WORAUF SICH DIE ZAHL BEZIEHT. Steht nur da, wenn sie NICHT die Entfernung
+  // zur naechsten Abzweigung ist - sonst waere es eine Selbstverstaendlichkeit
+  // im Blickfeld. Ohne den Zusatz haelt man aber den Rest der Gesamtstrecke
+  // fuer den Abstand zur Abzweigung, und das ist ein Irrtum mit Folgen.
+  const char *bezug = weg_bezug();
+  if (bezug[0]) {
+    graphics_context_set_text_color(ctx, KW_COLOR_ZART);
+    graphics_draw_text(ctx, bezug,
+                       fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_14
+                                                      : FONT_KEY_GOTHIC_14),
+                       GRect(RAND, y + ZAHL_H - (KW_BREIT ? 4 : 2), b.size.w - 2 * RAND, 18),
+                       GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+  }
 }
 
 static void prv_zeichne(Layer *layer, GContext *ctx) {
@@ -112,13 +126,18 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
   int16_t y = PBL_IF_ROUND_ELSE(34, 10);
 
   prv_zeichne_entfernung(ctx, b, y);
-  y += ZAHL_H + (KW_BREIT ? 2 : 0);
+  // Der Bezug unter der Zahl braucht eigenen Platz - ohne diese Zeile laege
+  // der Balken darauf.
+  y += ZAHL_H + (KW_BREIT ? 2 : 0) + (weg_bezug()[0] ? (KW_BREIT ? 16 : 14) : 0);
 
-  // --- Balken: wie nah die Abzweigung ist ---
-  // Unter 300 m wird er sichtbar und laeuft leer. Das ist die Spanne, in der
-  // ein Blick aufs Handgelenk noch etwas aendert.
-  if (w->entfernung_m >= 0 && w->entfernung_m < 300) {
-    const int16_t voll = (int16_t)((300 - w->entfernung_m) * breite / 300);
+  // --- Balken ---
+  // Was er zeigt, haengt davon ab, was die Quelle hergibt: bei einer
+  // Entfernung zur Abzweigung laeuft er unter 300 m voll, bei blossem
+  // Streckenfortschritt zeigt er den zurueckgelegten Teil. weg_balken_prozent
+  // entscheidet das, damit hier keine zweite Fassung derselben Regel steht.
+  const int proz = weg_balken_prozent();
+  if (proz >= 0) {
+    const int16_t voll = (int16_t)((int32_t)proz * breite / 100);
     graphics_context_set_fill_color(ctx, KW_COLOR_BALKEN_BG);
     graphics_fill_rect(ctx, GRect(RAND, y, breite, BALKEN_H), 0, GCornerNone);
     graphics_context_set_fill_color(ctx, KW_COLOR_BALKEN);
@@ -136,9 +155,9 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
   y += ANW_H * 2;
 
   // --- Strasse, wenn eine kam ---
-  if (w->strasse[0]) {
+  if (w->zusatz[0]) {
     graphics_context_set_text_color(ctx, KW_COLOR_ZART);
-    graphics_draw_text(ctx, w->strasse,
+    graphics_draw_text(ctx, w->zusatz,
                        fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_24
                                                       : FONT_KEY_GOTHIC_14),
                        GRect(RAND, y, breite, STR_H * 2),

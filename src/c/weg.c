@@ -9,6 +9,8 @@ const Weg *weg_stand(void) { return &s_weg; }
 
 void weg_lade(void) {
   s_weg.entfernung_m = -1;
+  s_weg.fortschritt_m = -1;
+  s_weg.fortschritt_max_m = -1;
   if (persist_exists(PERSIST_WEG)) {
     persist_read_data(PERSIST_WEG, &s_weg, sizeof(s_weg));
   }
@@ -36,7 +38,7 @@ static bool prv_nimm_text(DictionaryIterator *iter, uint32_t key, char *ziel, si
 bool weg_uebernimm(DictionaryIterator *iter) {
   const bool neu = prv_nimm_text(iter, MESSAGE_KEY_ANWEISUNG,
                                 s_weg.anweisung, KW_ANWEISUNG_LEN);
-  prv_nimm_text(iter, MESSAGE_KEY_STRASSE, s_weg.strasse, KW_STRASSE_LEN);
+  prv_nimm_text(iter, MESSAGE_KEY_ZUSATZ, s_weg.zusatz, KW_ZUSATZ_LEN);
 
   Tuple *e = dict_find(iter, MESSAGE_KEY_ENTFERNUNG);
   if (e && e->type == TUPLE_INT) s_weg.entfernung_m = e->value->int32;
@@ -44,13 +46,70 @@ bool weg_uebernimm(DictionaryIterator *iter) {
   Tuple *a = dict_find(iter, MESSAGE_KEY_ANKUNFT);
   if (a && a->type == TUPLE_INT) s_weg.ankunft = (time_t)a->value->int32;
 
+  Tuple *f = dict_find(iter, MESSAGE_KEY_FORTSCHRITT);
+  if (f && f->type == TUPLE_INT) s_weg.fortschritt_m = f->value->int32;
+  Tuple *fm = dict_find(iter, MESSAGE_KEY_FORTSCHRITT_MAX);
+  if (fm && fm->type == TUPLE_INT) s_weg.fortschritt_max_m = fm->value->int32;
+
+  // DIE BEIDEN SCHLIESSEN EINANDER AUS, und wer zuletzt kommt, gilt.
+  //
+  // Sonst bleibt ein Wert stehen, den niemand mehr meint: erst zeigt OsmAnd
+  // 80 Meter bis zur Abzweigung, dann uebernimmt Google Maps, das nur den
+  // Streckenfortschritt kennt - und die Uhr zeigt weiter 80 Meter, fuer immer.
+  // Genau so ist es im Emulator passiert. Dass sonst jedes Feld stehen bleibt,
+  // wenn es fehlt, ist richtig; hier waere es ein Irrtum mit Folgen.
+  if (f || fm) {
+    s_weg.entfernung_m = -1;
+  } else if (e) {
+    s_weg.fortschritt_m = -1;
+    s_weg.fortschritt_max_m = -1;
+  }
+
   s_weg.empfangen = time(NULL);
   persist_write_data(PERSIST_WEG, &s_weg, sizeof(s_weg));
   return neu;
 }
 
+/**
+ * Welche Zahl gross dasteht.
+ *
+ * Die Entfernung zur naechsten Abzweigung, wenn die Quelle sie kennt - das
+ * ist die nuetzlichere. Kennt sie nur den Fortschritt auf der Gesamtstrecke,
+ * wie Google Maps, bleibt der Rest bis zum Ziel. Beides in derselben Zeile
+ * anzuzeigen waere falsch; welches gerade gilt, sagt weg_bezug().
+ */
+static int32_t prv_grosse_zahl(void) {
+  if (s_weg.entfernung_m >= 0) return s_weg.entfernung_m;
+  if (s_weg.fortschritt_max_m > 0 && s_weg.fortschritt_m >= 0) {
+    const int32_t rest = s_weg.fortschritt_max_m - s_weg.fortschritt_m;
+    return rest > 0 ? rest : 0;
+  }
+  return -1;
+}
+
+const char *weg_bezug(void) {
+  if (s_weg.entfernung_m >= 0) return "";
+  if (s_weg.fortschritt_max_m > 0) return "bis zum Ziel";
+  return "";
+}
+
+int weg_balken_prozent(void) {
+  // Naechste Abzweigung: der Balken laeuft unter 300 m voll. Das ist die
+  // Spanne, in der ein Blick aufs Handgelenk noch etwas aendert.
+  if (s_weg.entfernung_m >= 0) {
+    if (s_weg.entfernung_m >= 300) return -1;
+    return (int)((300 - s_weg.entfernung_m) * 100 / 300);
+  }
+  // Gesamtstrecke: der Balken ist die gefahrene Strecke.
+  if (s_weg.fortschritt_max_m > 0 && s_weg.fortschritt_m >= 0) {
+    const int p = (int)((int64_t)s_weg.fortschritt_m * 100 / s_weg.fortschritt_max_m);
+    return p < 0 ? 0 : (p > 100 ? 100 : p);
+  }
+  return -1;
+}
+
 char *weg_entfernung_text(char *puf, size_t len) {
-  const int32_t m = s_weg.entfernung_m;
+  const int32_t m = prv_grosse_zahl();
   if (m < 0) {
     snprintf(puf, len, "--");
   } else if (m < 1000) {
