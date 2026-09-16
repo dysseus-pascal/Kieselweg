@@ -1,0 +1,40 @@
+{
+  "name": "kieselweg",
+  "author": "dysseus-pascal",
+  "version": "0.1.0",
+  "license": "CC0-1.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "pebble": {
+    "displayName": "Kieselweg",
+    "uuid": "888e2bc3-f95a-40ce-ac86-01eeeded7d36",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "ANWEISUNG",
+      "ENTFERNUNG",
+      "STRASSE",
+      "ANKUNFT"
+    ],
+    "resources": {
+      "media": [
+        {
+          "menuIcon": true,
+          "type": "bitmap",
+          "name": "IMAGE_ICON",
+          "file": "images/system_icon.png"
+        }
+      ]
+    }
+  }
+}
