@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "weg.h"
+#include "kern.h"
 
 #define PERSIST_WEG 1
 
@@ -36,9 +37,20 @@ static bool prv_nimm_text(DictionaryIterator *iter, uint32_t key, char *ziel, si
 }
 
 bool weg_uebernimm(DictionaryIterator *iter) {
-  const bool neu = prv_nimm_text(iter, MESSAGE_KEY_ANWEISUNG,
-                                s_weg.anweisung, KW_ANWEISUNG_LEN);
+  // NICHT die Texte vergleichen, sondern ihre Kerne. Google Maps schreibt die
+  // Entfernung in den Anweisungstext; er aendert sich damit bei jedem Takt,
+  // obwohl der Schritt derselbe bleibt. Siehe kern.h.
+  char vorher[KW_ANWEISUNG_LEN];
+  kern(s_weg.anweisung, vorher, sizeof(vorher));
+
+  prv_nimm_text(iter, MESSAGE_KEY_ANWEISUNG, s_weg.anweisung, KW_ANWEISUNG_LEN);
   prv_nimm_text(iter, MESSAGE_KEY_ZUSATZ, s_weg.zusatz, KW_ZUSATZ_LEN);
+
+  char nachher[KW_ANWEISUNG_LEN];
+  kern(s_weg.anweisung, nachher, sizeof(nachher));
+  const bool neu = (strcmp(vorher, nachher) != 0);
+  APP_LOG(APP_LOG_LEVEL_INFO, "Kern '%s' -> '%s' : %s",
+          vorher, nachher, neu ? "NEUER SCHRITT" : "derselbe");
 
   Tuple *e = dict_find(iter, MESSAGE_KEY_ENTFERNUNG);
   if (e && e->type == TUPLE_INT) s_weg.entfernung_m = e->value->int32;

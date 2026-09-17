@@ -20,9 +20,34 @@ Der letzte Punkt ist der wichtigste. Solange die Karten-App nachschiebt, sagt
 ein Zeitstempel nichts. Bleibt er aber stehen, **muss** man es sehen — sonst
 fährt man nach einer Anweisung, die seit zehn Minuten überholt ist.
 
-Bei einer **neuen** Anweisung summt die Uhr kurz. Nur bei einer neuen: während
-der Fahrt schiebt die Karten-App dieselbe Anweisung im Sekundentakt mit
-kleinerer Entfernung nach, und ein Summen je Meldung wäre unbrauchbar.
+Bei einem **neuen Schritt** summt die Uhr kurz — und »neu« heisst: der *Kern*
+der Anweisung hat sich geändert, nicht ihr Text.
+
+Das ist der Unterschied, an dem die erste Fassung gescheitert ist. Google Maps
+schreibt die Entfernung **in** den Text: »In 250 m rechts abbiegen«, dann
+»In 200 m …«, dann »In 80 m …«. Derselbe Schritt, jedes Mal ein anderer Text —
+und die Uhr summte alle paar hundert Meter Autofahrt. Am Steuer aufgefallen,
+nicht im Emulator: dort hatte ich denselben Text zweimal geschickt, in
+Wirklichkeit kommt er nie zweimal gleich.
+
+Vor dem Vergleich werden deshalb Zahlen **mit Längeneinheit** ausgeblendet:
+
+| Text | Kern |
+|---|---|
+| `In 250 m rechts abbiegen` | `In # rechts abbiegen` |
+| `In 1,2 km rechts abbiegen` | `In # rechts abbiegen` |
+| `In 0.2 mi turn right` | `In # turn right` |
+| `Ausfahrt 3 nehmen` | `Ausfahrt 3 nehmen` |
+
+Die letzte Zeile ist der Grund für die Einschränkung auf Einheiten: »Ausfahrt 3«
+und »Ausfahrt 4« sind wirklich zwei Schritte, und wer sie zusammenwirft,
+verschweigt einen.
+
+Darunter liegt ein Netz: **höchstens einmal alle 30 Sekunden**. Eine Quelle, die
+ihren Text anders umbaut, kann den Kern-Vergleich überlisten — diesen Riegel
+nicht. Der Preis ist ehrlich zu nennen: folgt ein echter zweiter Schritt
+innerhalb von 30 Sekunden (»rechts, dann sofort links«), bleibt sein Summen
+aus. Auf dem Schirm steht er trotzdem.
 
 ## Was sie empfängt
 
