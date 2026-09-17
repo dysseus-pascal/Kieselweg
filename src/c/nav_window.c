@@ -2,6 +2,7 @@
 #include "nav_window.h"
 #include "theme.h"
 #include "weg.h"
+#include "pfeil.h"
 
 // Ab hier gilt der Stand als kalt: die Navigation ist entweder beendet oder
 // das Telefon ist weg. Zwei Minuten sind grosszuegig - Google Maps schiebt
@@ -38,7 +39,7 @@ static GFont prv_font_zahl(void) {
  * "250 m" wuerde als "250" mit einer Luecke erscheinen. Deshalb zwei Stuecke:
  * die Zahl in LECO, die Einheit daneben in GOTHIC.
  */
-static void prv_zeichne_entfernung(GContext *ctx, GRect b, int16_t y) {
+static void prv_zeichne_entfernung(GContext *ctx, GRect b, int16_t y, Richtung r) {
   weg_entfernung_text(s_zahl, sizeof(s_zahl));
 
   // Zahl und Einheit trennen: alles bis zum ersten Leerzeichen ist die Zahl.
@@ -63,11 +64,21 @@ static void prv_zeichne_entfernung(GContext *ctx, GRect b, int16_t y) {
       einheit, fe, GRect(0, 0, b.size.w, ZAHL_H),
       GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
 
-  // Beide zusammen mittig setzen, damit die Zeile nicht wandert, wenn aus
-  // "980 m" ein "1.2 km" wird.
-  const int16_t breite = sz.w + (einheit[0] ? se.w + 4 : 0);
+  // Pfeil, Zahl und Einheit zusammen mittig setzen, damit die Zeile nicht
+  // wandert, wenn aus "980 m" ein "1,2 km" wird.
+  const int16_t pfeil_w = (r == RICHTUNG_UNBEKANNT) ? 0
+                        : (int16_t)(pfeil_breite() + (KW_BREIT ? 10 : 6));
+  const int16_t breite = pfeil_w + sz.w + (einheit[0] ? se.w + 4 : 0);
   int16_t x = (b.size.w - breite) / 2;
   if (x < RAND) x = RAND;
+
+  if (pfeil_w > 0) {
+    // Der Pfeil sitzt auf der Mitte der Ziffern, nicht auf der Mitte des
+    // Kastens - sonst schwebt er ueber der Zeile.
+    pfeil_zeichne(ctx, GPoint((int16_t)(x + pfeil_breite() / 2),
+                              (int16_t)(y + ZAHL_H / 2 - (KW_BREIT ? 6 : 4))), r);
+    x = (int16_t)(x + pfeil_w);
+  }
 
   graphics_context_set_text_color(ctx, KW_COLOR_TEXT);
   graphics_draw_text(ctx, zahl, fz, GRect(x, y, sz.w + 4, ZAHL_H),
@@ -162,7 +173,8 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
     return;
   }
 
-  prv_zeichne_entfernung(ctx, b, y);
+  const Richtung richtung = pfeil_richtung(w->anweisung);
+  prv_zeichne_entfernung(ctx, b, y, richtung);
   // Der Bezug unter der Zahl braucht eigenen Platz - ohne diese Zeile laege
   // der Balken darauf.
   y += ZAHL_H + (KW_BREIT ? 2 : 0) + (weg_bezug()[0] ? (KW_BREIT ? 16 : 14) : 0);

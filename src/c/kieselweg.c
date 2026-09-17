@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include "nav_window.h"
 #include "weg.h"
+#include "pfeil.h"
 
 // Ein Woerterbuch mit zwei Zeichenketten und zwei Zahlen. 256 Byte lassen
 // Luft, ohne dass jemand nachrechnen muss.
@@ -56,6 +57,7 @@ static void prv_abgewiesen(AppMessageResult grund, void *context) {
 
 static void prv_init(void) {
   weg_lade();
+  pfeil_init();
   app_message_register_inbox_received(prv_empfangen);
   app_message_register_inbox_dropped(prv_abgewiesen);
   app_message_open(INBOX_SIZE, OUTBOX_SIZE);
@@ -64,6 +66,7 @@ static void prv_init(void) {
 
 static void prv_deinit(void) {
   nav_window_destroy();
+  pfeil_deinit();
 }
 
 int main(void) {

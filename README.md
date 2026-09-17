@@ -10,6 +10,7 @@ vom Telefon schickt.
 
 | | |
 |---|---|
+| **Pfeil** | die Richtung, links neben der Entfernung |
 | **Entfernung** | gross in LECO, unter 1 km in Metern, darüber in Kilometern mit einer Stelle |
 | **Balken** | erscheint unter 300 m und läuft leer — die Spanne, in der ein Blick aufs Handgelenk noch etwas ändert |
 | **Anweisung** | »Rechts abbiegen auf«, umgebrochen |
@@ -53,6 +54,36 @@ ihren Text anders umbaut, kann den Kern-Vergleich überlisten — diesen Riegel
 nicht. Der Preis ist ehrlich zu nennen: folgt ein echter zweiter Schritt
 innerhalb von 30 Sekunden (»rechts, dann sofort links«), bleibt sein Summen
 aus. Auf dem Schirm steht er trotzdem.
+
+### Der Pfeil
+
+**Die Richtung kommt aus dem Anweisungstext.** Google Maps schickt kein Feld
+dafür — sie steht in Worten da: »rechts abbiegen«, »turn left«, »keep left«.
+Ein Zettel könnte sie nicht herausrechnen; er reicht Werte weiter, mehr nicht.
+Also deutet die Uhr den Text, und das ist die richtige Stelle: hier steht Code,
+dort ein Zettel.
+
+Acht Richtungen aus **einer** Form, achtmal gedreht — ein Abbiegepfeil ist
+nichts anderes als ein gerader Pfeil in einem anderen Winkel:
+
+| Wort | Pfeil |
+|---|---|
+| geradeaus, straight, continue, head, folgen | ↑ |
+| leicht/slight/keep/bear + rechts/right | ↗ |
+| rechts, right | → |
+| scharf/sharp + rechts/right | ↘ |
+| wenden, u-turn, umkehren | ↓ |
+| … spiegelbildlich nach links | ↙ ← ↖ |
+| Ziel, destination, arrive, angekommen | ein Ring statt eines Pfeils |
+
+Erkannt wird nur als **ganzes Wort**. »Auf dem Rechtsweg bleiben« löst deshalb
+keinen Rechtspfeil aus — sonst schickte die Uhr einen ins Abbiegen, weil die
+Strasse so heisst. Passt kein Wort, steht kein Pfeil da; eine geratene Richtung
+wäre schlimmer als keine.
+
+Das Symbol aus der Benachrichtigung wäre genauer — Maps legt dort ein fertiges
+Abbiegesymbol hinein. Ein Bild passt aber weder in das Wörterbuch, das ein
+Zettel füllen kann, noch durch die Senke `senden`.
 
 ## Was sie empfängt
 
