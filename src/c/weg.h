@@ -50,3 +50,10 @@ bool weg_hat_zahl(void);
 
 // Wie alt ist der Stand in Sekunden? -1, wenn noch nichts da ist.
 int weg_alter_s(void);
+
+// Ist der Stand so alt, dass er keine Navigation mehr ist? Ein gespeicherter
+// Stand von gestern ist keine Anweisung, sondern eine Erinnerung.
+bool weg_veraltet(void);
+
+// Das Alter in Worten: "vor 12 min", "vor 3 Std", "vor 2 Tagen".
+char *weg_alter_text(char *puf, size_t len);

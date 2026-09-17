@@ -107,19 +107,43 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
 
   const int16_t breite = b.size.w - 2 * RAND;
 
-  // --- Noch nie etwas empfangen ---
-  if (alter < 0) {
+  // --- Nichts Gueltiges zu zeigen ---
+  //
+  // Zwei Faelle, ein Schirm: noch nie etwas empfangen, oder der letzte Stand
+  // ist zu alt, um noch eine Anweisung zu sein.
+  //
+  // DER ZWEITE WAR EIN FEHLER. Die Uhr laedt beim Oeffnen den gespeicherten
+  // Stand - gedacht als "besser als ein leerer Schirm". Bei einem Stand vom
+  // Vortag zeigte sie damit eine Abbiegung an, die es nicht mehr gibt, und der
+  // einzige Hinweis war "vor 1440 min" klein in der Ecke. Eine Anzeige, die
+  // Altes wie Neues aussehen laesst, ist schlimmer als eine leere.
+  if (weg_veraltet()) {
     const GFont f = fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_24_BOLD
                                                    : FONT_KEY_GOTHIC_18_BOLD);
     const GFont fz = fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_18
                                                     : FONT_KEY_GOTHIC_14);
-    graphics_draw_text(ctx, "Wartet auf\ndas Telefon", f,
+    graphics_draw_text(ctx, alter < 0 ? "Wartet auf\ndas Telefon"
+                                      : "Keine\nNavigation", f,
                        GRect(RAND, b.size.h / 3, breite, ANW_H * 3),
                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+
     graphics_context_set_text_color(ctx, KW_COLOR_ZART);
-    graphics_draw_text(ctx, "Kiesel-Helper schickt,\nwas die Karten-App meldet.", fz,
-                       GRect(RAND, b.size.h / 3 + ANW_H * 2, breite, STR_H * 3),
-                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    if (alter < 0) {
+      graphics_draw_text(ctx, "Kiesel-Helper schickt,\nwas die Karten-App meldet.", fz,
+                         GRect(RAND, b.size.h / 3 + ANW_H * 2, breite, STR_H * 3),
+                         GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    } else {
+      // Was zuletzt kam, darf man sehen - aber klein, und mit dem Alter
+      // davor, damit es niemand fuer eine Anweisung haelt.
+      char wann[24];
+      weg_alter_text(wann, sizeof(wann));
+      char letzte[KW_ANWEISUNG_LEN + 32];
+      snprintf(letzte, sizeof(letzte), "zuletzt %s:\n%s", wann,
+               w->anweisung[0] ? w->anweisung : "—");
+      graphics_draw_text(ctx, letzte, fz,
+                         GRect(RAND, b.size.h / 3 + ANW_H * 2, breite, STR_H * 4),
+                         GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+    }
     return;
   }
 
@@ -162,10 +186,17 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
   graphics_context_set_text_color(ctx, KW_COLOR_TEXT);
   const GFont fa = fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_28_BOLD
                                                   : FONT_KEY_GOTHIC_18_BOLD);
-  graphics_draw_text(ctx, w->anweisung[0] ? w->anweisung : "—", fa,
-                     GRect(RAND, y, breite, ANW_H * 3),
+  // WIE HOCH DIE ANWEISUNG WIRKLICH IST, nicht wie hoch sie sein sollte.
+  // Mit festen zwei Zeilen lag der Zusatz auf der dritten, sobald die
+  // Anweisung lang wurde - und bei Google Maps ist sie lang, weil dort
+  // Entfernung, Richtung und Strasse in einem Feld stehen.
+  const char *anw = w->anweisung[0] ? w->anweisung : "—";
+  const GSize anw_gr = graphics_text_layout_get_content_size(
+      anw, fa, GRect(0, 0, breite, ANW_H * 4),
+      GTextOverflowModeWordWrap, AUSR);
+  graphics_draw_text(ctx, anw, fa, GRect(RAND, y, breite, ANW_H * 4),
                      GTextOverflowModeWordWrap, AUSR, NULL);
-  y += ANW_H * 2;
+  y += anw_gr.h + (KW_BREIT ? 4 : 2);
 
   // --- Strasse, wenn eine kam ---
   if (w->zusatz[0]) {
@@ -183,7 +214,7 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
   // seit zehn Minuten ueberholt ist.
   if (alter > KW_KALT_S) {
     char fuss[32];
-    snprintf(fuss, sizeof(fuss), "vor %d min", alter / 60);
+    weg_alter_text(fuss, sizeof(fuss));
     graphics_context_set_text_color(ctx, KW_COLOR_ZART);
     graphics_draw_text(ctx, fuss,
                        fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_18

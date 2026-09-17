@@ -16,6 +16,11 @@ vom Telefon schickt.
 | **Strasse** | darunter, leiser |
 | **»vor N min«** | nur wenn seit über zwei Minuten nichts mehr kam |
 
+**Ein Stand älter als zehn Minuten ist keine Navigation mehr.** Dann steht
+»Keine Navigation« da, und darunter klein, was zuletzt kam und wann. Die Uhr
+lädt beim Öffnen zwar den gespeicherten Stand — aber eine Anzeige, die Altes
+wie Neues aussehen lässt, ist schlimmer als eine leere.
+
 Der letzte Punkt ist der wichtigste. Solange die Karten-App nachschiebt, sagt
 ein Zeitstempel nichts. Bleibt er aber stehen, **muss** man es sehen — sonst
 fährt man nach einer Anweisung, die seit zehn Minuten überholt ist.

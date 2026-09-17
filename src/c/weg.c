@@ -140,6 +140,40 @@ char *weg_entfernung_text(char *puf, size_t len) {
   return puf;
 }
 
+/**
+ * Ab wann ein Stand keine Navigation mehr ist.
+ *
+ * Zehn Minuten sind grosszuegig: ein Tunnel, eine Pause an der Ampel, ein
+ * Telefon, das kurz den Empfang verliert - all das soll die Anzeige nicht
+ * loeschen. Ein Stand von gestern dagegen ist keine Anweisung mehr, sondern
+ * eine Erinnerung, und er darf sich nicht als Anweisung ausgeben.
+ */
+#define KW_VERALTET_S 600
+
+bool weg_veraltet(void) {
+  const int a = weg_alter_s();
+  return a < 0 || a > KW_VERALTET_S;
+}
+
+char *weg_alter_text(char *puf, size_t len) {
+  const int a = weg_alter_s();
+  if (a < 0) {
+    puf[0] = 0;   // leere Zeichenkette - snprintf mit "" ist ein Fehler
+  } else if (a < 60) {
+    snprintf(puf, len, "vor %d s", a);
+  } else if (a < 3600) {
+    snprintf(puf, len, "vor %d min", a / 60);
+  } else if (a < 86400) {
+    // Ab einer Stunde in Stunden. "vor 1440 min" ist zwar richtig, aber
+    // niemand rechnet das im Vorbeischauen um.
+    snprintf(puf, len, "vor %d Std", a / 3600);
+  } else {
+    const int tage = a / 86400;
+    snprintf(puf, len, tage == 1 ? "gestern" : "vor %d Tagen", tage);
+  }
+  return puf;
+}
+
 int weg_alter_s(void) {
   if (s_weg.empfangen == 0) return -1;
   const int alter = (int)(time(NULL) - s_weg.empfangen);
