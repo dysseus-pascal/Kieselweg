@@ -38,5 +38,8 @@ Richtung pfeil_richtung(const char *anweisung);
 /** Wie breit der Pfeil auf dieser Uhr ist - fuer die Aufteilung der Zeile. */
 int16_t pfeil_breite(void);
 
+/** Wie hoch er ist - fuer die Anzeige ohne Zahl, wo er ueber dem Text steht. */
+int16_t pfeil_hoehe(void);
+
 /** Zeichnet den Pfeil mittig um `mitte`. UNBEKANNT zeichnet nichts. */
 void pfeil_zeichne(GContext *ctx, GPoint mitte, Richtung r);

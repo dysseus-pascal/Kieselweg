@@ -21,17 +21,30 @@ void weg_lade(void) {
 }
 
 /**
- * Eine Zeichenkette uebernehmen - aber nur, wenn sie wirklich dasteht.
+ * Eine Zeichenkette uebernehmen.
  *
- * dict_find gibt auch fuer ein leeres Feld einen Eintrag zurueck. Wer das
- * nicht prueft, loescht mit der naechsten Standmeldung die Anweisung, die
- * noch gilt.
+ * Fehlt der Schluessel, bleibt das alte Feld stehen - so kann das Telefon
+ * die Entfernung nachschieben, ohne die Anweisung mitzuschicken.
+ *
+ * STEHT DER SCHLUESSEL ABER DA UND IST LEER, WIRD GELOESCHT. Frueher wurde
+ * auch das verworfen, aus Angst vor einer Standmeldung, die versehentlich
+ * Leeres schickt und die gueltige Anweisung wegwischt. Diese Angst war
+ * begruendet, solange irgendwer beliebige Nachrichten schickte; seit die
+ * Zettel Fassung 2 sprechen, ist sie es nicht mehr: aus einer Quelle kann
+ * gar kein leerer Text kommen, der wird schon drueben verworfen. Leer
+ * bekommt man nur, indem man es hinschreibt.
+ *
+ * Und man braucht es: "Navigation beendet" mit der Strasse von vorhin
+ * darunter ist schlimmer als gar nichts. Genau das stand bisher da.
  */
 static bool prv_nimm_text(DictionaryIterator *iter, uint32_t key, char *ziel, size_t len) {
   Tuple *t = dict_find(iter, key);
-  if (!t || t->type != TUPLE_CSTRING || t->length <= 1) return false;
-  const bool anders = (strncmp(ziel, t->value->cstring, len) != 0);
-  strncpy(ziel, t->value->cstring, len - 1);
+  if (!t || t->type != TUPLE_CSTRING) return false;
+  // Bei laenge 0 ist cstring nicht zu gebrauchen - dann selber eine leere
+  // Zeichenkette nehmen, statt ins Leere zu lesen.
+  const char *neu = (t->length <= 1) ? "" : t->value->cstring;
+  const bool anders = (strncmp(ziel, neu, len) != 0);
+  strncpy(ziel, neu, len - 1);
   ziel[len - 1] = '\0';
   return anders;
 }

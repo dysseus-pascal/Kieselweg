@@ -81,22 +81,39 @@ keinen Rechtspfeil aus — sonst schickte die Uhr einen ins Abbiegen, weil die
 Strasse so heisst. Passt kein Wort, steht kein Pfeil da; eine geratene Richtung
 wäre schlimmer als keine.
 
+Der Pfeil steht **auch dann da, wenn keine Zahl kommt** — und das ist der
+Augenblick, auf den es ankommt. Google Maps lässt im letzten Takt vor der
+Abzweigung die Entfernung weg: »110 m«, »110 m«, dann bloss noch »Turn left
+onto …«. Das ist kein Fehlen, das ist das Jetzt. Bisher stand der Pfeil nur
+neben der Zahl und verschwand ausgerechnet dann.
+
 Das Symbol aus der Benachrichtigung wäre genauer — Maps legt dort ein fertiges
 Abbiegesymbol hinein. Ein Bild passt aber weder in das Wörterbuch, das ein
 Zettel füllen kann, noch durch die Senke `senden`.
 
 ## Was sie empfängt
 
-Vier Felder, alle einzeln und alle freiwillig. Fehlt eines, bleibt das alte
+Sechs Felder, alle einzeln und alle freiwillig. Fehlt eines, bleibt das alte
 stehen — so kann das Telefon nur die Entfernung nachschieben, ohne die
 Anweisung mitzuschicken.
 
 | Feld | Nummer | Art | Bedeutung |
 |---|---|---|---|
 | `ANWEISUNG` | 10000 | Text | »Rechts abbiegen auf« |
-| `ENTFERNUNG` | 10001 | Zahl | Meter bis zur Abzweigung |
-| `STRASSE` | 10002 | Text | »Bahnhofstrasse« |
-| `ANKUNFT` | 10003 | Zahl | Ankunftszeit, Sekunden seit 1970 |
+| `ENTFERNUNG` | 10001 | Zahl | Meter bis zur Abzweigung; **−1 heisst: gar keine** |
+| `ZUSATZ` | 10002 | Text | die leise Zeile darunter — Strasse, Ankunft, was die Quelle hergibt |
+| `ANKUNFT` | 10003 | Zahl | Ankunftszeit, Sekunden seit 1970. Wird angenommen, aber noch nicht angezeigt |
+| `FORTSCHRITT` | 10004 | Zahl | zurückgelegte Meter, für Quellen ohne Entfernung |
+| `FORTSCHRITT_MAX` | 10005 | Zahl | Gesamtstrecke dazu |
+
+**Entfernung und Fortschritt schliessen einander aus**, und wer zuletzt kommt,
+gilt. Sonst bliebe eine Zahl stehen, die niemand mehr meint: erst zeigt die
+eine Quelle 80 Meter bis zur Abzweigung, dann übernimmt eine, die nur den
+Streckenfortschritt kennt — und die Uhr zeigte weiter 80 Meter, für immer.
+
+**Ein leeres Textfeld löscht.** Fehlt der Schlüssel, bleibt das alte stehen;
+steht er da und ist leer, wird geräumt. Ohne diesen Unterschied stand unter
+»Navigation beendet« noch die Ankunftszeit von vorhin.
 
 Die Nummern ergeben sich aus der Reihenfolge der `messageKeys` in der
 `package.json`, beginnend bei 10000. **Wer dort eine Zeile dazwischenschiebt,

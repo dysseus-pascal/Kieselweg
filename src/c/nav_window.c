@@ -160,15 +160,33 @@ static void prv_zeichne(Layer *layer, GContext *ctx) {
 
   int16_t y = PBL_IF_ROUND_ELSE(34, 10);
 
-  // --- Nichts mehr zu zeigen ---
-  // Nach dem Ende einer Navigation schickt das Telefon eine Null fuer die
-  // Strecke. Dann steht die Anweisung allein da, gross und mittig, statt
-  // unter zwei Strichen, wo eine Zahl sein sollte.
+  // --- Keine Zahl ---
+  // Zwei Faelle fallen hier zusammen, und beide sind echt: nach dem Ende
+  // einer Navigation raeumt das Telefon die Entfernung weg - und Google Maps
+  // laesst sie im letzten Takt VOR der Abzweigung weg. "110 m", "110 m",
+  // dann bloss noch "Turn left onto Im Dorf". Das ist kein Fehlen, das ist
+  // das Jetzt.
+  //
+  // DARUM GEHOERT DER PFEIL GERADE HIER HIN. Er stand bisher nur neben der
+  // Zahl und verschwand ausgerechnet im Augenblick des Abbiegens - in dem
+  // einen Takt, in dem ein Blick aufs Handgelenk noch etwas aendert.
   if (!weg_hat_zahl()) {
+    const Richtung r = pfeil_richtung(w->anweisung);
+    int16_t oben = b.size.h / 3;
+    if (r != RICHTUNG_UNBEKANNT) {
+      // Die Gruppe hoeher ansetzen, sonst schiebt der Pfeil den Text nach
+      // unten aus der Mitte - und bei drei Zeilen aus dem Schirm.
+      const int16_t ph = pfeil_hoehe();
+      oben = (int16_t)(b.size.h / 3 - ph * 2 / 3);
+      if (oben < RAND) oben = RAND;
+      pfeil_zeichne(ctx, GPoint((int16_t)(b.size.w / 2), (int16_t)(oben + ph / 2)), r);
+      oben = (int16_t)(oben + ph + (KW_BREIT ? 10 : 7));
+    }
+    graphics_context_set_text_color(ctx, KW_COLOR_TEXT);
     graphics_draw_text(ctx, w->anweisung[0] ? w->anweisung : "Keine Navigation",
                        fonts_get_system_font(KW_BREIT ? FONT_KEY_GOTHIC_28_BOLD
                                                       : FONT_KEY_GOTHIC_24_BOLD),
-                       GRect(RAND, b.size.h / 3, breite, ANW_H * 3),
+                       GRect(RAND, oben, breite, ANW_H * 3),
                        GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
     return;
   }

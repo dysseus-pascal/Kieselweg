@@ -38,6 +38,8 @@ void pfeil_deinit(void) {
 
 int16_t pfeil_breite(void) { return (int16_t)(2 * P_K); }
 
+int16_t pfeil_hoehe(void) { return (int16_t)(2 * P_H); }
+
 // --- Den Text deuten ---
 
 static bool prv_buchstabe(unsigned char c) {
@@ -107,7 +109,7 @@ Richtung pfeil_richtung(const char *anweisung) {
   if (prv_wort(anweisung, "links") || prv_wort(anweisung, "left")) {
     return RICHTUNG_LINKS;
   }
-  // "Head toward Lindenweg", "geradeaus weiter", "continue on"
+  // "Head toward Bahnhofstrasse", "geradeaus weiter", "continue on"
   if (prv_wort(anweisung, "geradeaus") || prv_wort(anweisung, "straight") ||
       prv_wort(anweisung, "weiter") || prv_wort(anweisung, "continue") ||
       prv_wort(anweisung, "head") || prv_wort(anweisung, "folgen") ||
