@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""App-Symbol: der Abbiegepfeil (25x25).
+"""App-Symbol: der Abbiegepfeil.
 
-Aufruf: make_app_icon.py <zielordner>
-Erzeugt system_icon.png - schwarze Linien auf durchsichtigem Grund.
+Aufruf: make_app_icon.py <zielordner>          -> system_icon.png (25x25)
+        make_app_icon.py --store <zielordner>  -> icon-144.png, icon-48.png
 
 MASSSTAB IST DAS SYSTEMSYMBOL, wie bei den Geschwistern: die Uhr-Kachel von
 "Watchfaces" im Starter wurde Punkt fuer Punkt nachgemessen - 24 von 25
@@ -17,6 +17,18 @@ acht Punkten Breite ein Knaeuel.
 WARUM EIN ABBIEGEPFEIL UND KEIN WEGWEISER: das Symbol steht in einer Liste
 neben Kapsel, Glas, Flieger und HRV. Es muss bei 25 Punkten sagen "hier geht
 es um Richtung", und das tut ein Pfeil in jeder Kultur sofort.
+
+DER STORE NIMMT NICHTS AUS DER .pbw. Im Entwicklerportal liegen zwei eigene
+Bilder, `icon_large` und `icon_small`; angefordert werden sie in festen Massen
+(gross 80 und 144, klein 28 und 48), jeweils mit `exact` in der Adresse, also
+erzwungen statt eingepasst - etwas Nicht-Quadratisches kommt verzogen zurueck.
+Darum hier eine gefuellte Kachel: das grosse Symbol legt der Store fuer sein
+Teilen-Bild durch eine abgerundete Maske, und ueber einer durchsichtigen
+Strichzeichnung taete die nichts.
+
+DIE FORM STEHT NUR EINMAL DA. Alle Masse gelten auf einem Raster von 25
+Punkten und werden mit s hochgerechnet; mit s = 1 kommt Punkt fuer Punkt das
+alte Bild heraus.
 """
 import math
 import os
@@ -24,7 +36,7 @@ import struct
 import sys
 import zlib
 
-W = H = 25
+RASTER = 25                      # Bezugsraster, auf dem alle Masse gelten
 SS = 4                           # Ueberabtastung je Achse
 LINE = 3.0                       # Strichstaerke in Punkten
 LW = LINE / 2.0 - 0.15           # halbe Strichstaerke, minus Rundungsluft
@@ -40,6 +52,13 @@ QUER_BIS = 14.0
 # Der Kopf. Etwas hoeher als die Strichstaerke, sonst verschwindet die Spitze.
 KOPF_X0, KOPF_X1 = 12.5, 23.0
 KOPF_HALB = 7.5
+
+# Store-Kachel. Der Wert stammt aus src/c/theme.h (KW_COLOR_BALKEN),
+# nachgeschlagen in gcolor_definitions.h des SDK - nicht aus dem Gedaechtnis.
+GRUND = (0x00, 0x55, 0xAA)       # GColorCobaltBlue
+STRICH = (0xFF, 0xFF, 0xFF)      # weiss
+FUELL = 0.72                     # wie viel der Kachel der Pfeil einnimmt
+STORE_GROESSEN = (144, 48)
 
 
 def png(path, w, h, rows):
@@ -66,26 +85,34 @@ def strecke(x, y, x0, y0, x1, y1):
     return math.hypot(x - (x0 + t * dx), y - (y0 + t * dy))
 
 
-def inside(x, y):
-    # Stiel und Querbalken als eine Linie mit Knick.
-    if strecke(x, y, STIEL_X, STIEL_UNTEN, STIEL_X, KNICK_Y) <= LW:
-        return True
-    if strecke(x, y, STIEL_X, KNICK_Y, QUER_BIS, KNICK_Y) <= LW:
-        return True
-    # Der Kopf als volles Dreieck: Spitze rechts auf der Hoehe des Knicks.
-    if KOPF_X0 <= x <= KOPF_X1:
-        anteil = (KOPF_X1 - x) / (KOPF_X1 - KOPF_X0)
-        if abs(y - KNICK_Y) <= KOPF_HALB * anteil:
+def pruefer(s):
+    """Der Formtest, auf den Massstab s gebracht."""
+    lw = LW * s
+    stiel_x, stiel_unten = STIEL_X * s, STIEL_UNTEN * s
+    knick_y, quer_bis = KNICK_Y * s, QUER_BIS * s
+    kopf_x0, kopf_x1, kopf_halb = KOPF_X0 * s, KOPF_X1 * s, KOPF_HALB * s
+
+    def inside(x, y):
+        # Stiel und Querbalken als eine Linie mit Knick.
+        if strecke(x, y, stiel_x, stiel_unten, stiel_x, knick_y) <= lw:
             return True
-    return False
+        if strecke(x, y, stiel_x, knick_y, quer_bis, knick_y) <= lw:
+            return True
+        # Der Kopf als volles Dreieck: Spitze rechts auf der Hoehe des Knicks.
+        if kopf_x0 <= x <= kopf_x1:
+            anteil = (kopf_x1 - x) / (kopf_x1 - kopf_x0)
+            if abs(y - knick_y) <= kopf_halb * anteil:
+                return True
+        return False
+    return inside
 
 
-def raster(test):
+def raster(test, n):
     """Vierfach ueberabtasten, bei halber Deckung schneiden. Harte Kanten."""
     grid = []
-    for py in range(H):
+    for py in range(n):
         row = []
-        for px in range(W):
+        for px in range(n):
             hits = 0
             for sy in range(SS):
                 for sx in range(SS):
@@ -96,21 +123,53 @@ def raster(test):
     return grid
 
 
-def write(dest, grid):
+def schreibe_uhr(dest):
+    n = RASTER
+    grid = raster(pruefer(1.0), n)
     rows = []
-    for y in range(H):
+    for y in range(n):
         r = []
-        for x in range(W):
+        for x in range(n):
             r += [0, 0, 0, 255] if grid[y][x] else [0, 0, 0, 0]
         rows.append(r)
-    png(os.path.join(dest, "system_icon.png"), W, H, rows)
-    n = sum(1 for r in grid for v in r if v)
-    ys = [y for y in range(H) if any(grid[y])]
+    png(os.path.join(dest, "system_icon.png"), n, n, rows)
+    punkte = sum(1 for r in grid for v in r if v)
+    ys = [y for y in range(n) if any(grid[y])]
     print("system_icon.png: %d Punkte schwarz, %d hoch (Vorbild: 180 / 24)"
-          % (n, (ys[-1] - ys[0] + 1) if ys else 0))
+          % (punkte, (ys[-1] - ys[0] + 1) if ys else 0))
+
+
+def schreibe_store(dest):
+    for gross in STORE_GROESSEN:
+        innen = int(round(gross * FUELL))
+        grid = raster(pruefer(innen / float(RASTER)), innen)
+        rand = (gross - innen) // 2
+        rows = []
+        for y in range(gross):
+            r = []
+            for x in range(gross):
+                iy, ix = y - rand, x - rand
+                treffer = 0 <= iy < innen and 0 <= ix < innen and grid[iy][ix]
+                farbe = STRICH if treffer else GRUND
+                r += [farbe[0], farbe[1], farbe[2], 255]
+            rows.append(r)
+        name = "icon-%d.png" % gross
+        png(os.path.join(dest, name), gross, gross, rows)
+        print("%s: Kachel %s, Pfeil weiss" % (name, "#%02X%02X%02X" % GRUND))
+
+
+def main():
+    args = sys.argv[1:]
+    store = "--store" in args
+    if store:
+        args.remove("--store")
+    ziel = args[0] if args else ("store" if store else ".")
+    os.makedirs(ziel, exist_ok=True)
+    if store:
+        schreibe_store(ziel)
+    else:
+        schreibe_uhr(ziel)
 
 
 if __name__ == "__main__":
-    ziel = sys.argv[1] if len(sys.argv) > 1 else "."
-    os.makedirs(ziel, exist_ok=True)
-    write(ziel, raster(inside))
+    main()
